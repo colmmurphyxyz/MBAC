@@ -1,0 +1,33 @@
+plugins {
+    id 'java'
+    id 'org.jetbrains.kotlin.jvm' version '1.4.20'
+}
+
+compileKotlin {
+    kotlinOptions {
+        jvmTarget=1.8
+    }
+}
+
+group 'xyz.colmmurphy'
+version '0.1.0'
+
+repositories {
+    mavenCentral()
+    jcenter()
+}
+
+dependencies {
+    implementation "org.jetbrains.kotlin:kotlin-stdlib"
+    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.6.0'
+    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine'
+    implementation("org.litote.kmongo:kmongo:4.2.3")
+}
+
+//tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {
+//    KotlinOptions {jvmTarget="1.8"}
+//}
+
+test {
+    useJUnitPlatform()
+}
