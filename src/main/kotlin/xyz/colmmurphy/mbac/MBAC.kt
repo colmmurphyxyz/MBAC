@@ -12,6 +12,7 @@ import com.mongodb.client.MongoClients
 import com.mongodb.client.MongoClient
 import com.mongodb.client.MongoCollection
 import com.mongodb.client.MongoDatabase
+import io.github.cdimascio.dotenv.dotenv
 import org.bson.Document
 import org.bson.types.ObjectId
 import org.litote.kmongo.util.idValue
@@ -20,8 +21,7 @@ import org.litote.kmongo.util.idValue
 @Throws(LoginException::class, InterruptedException::class)
 fun main() {
     println("Hello World")
-    val foo = Db.getPlayerFromId("349889344745635842")
-    println(foo.elo)
+    println(dotenv()["DB_PASS"])
 
 }
 

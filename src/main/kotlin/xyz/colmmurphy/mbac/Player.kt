@@ -2,6 +2,7 @@ package xyz.colmmurphy.mbac
 
 import com.mongodb.client.MongoClients
 import com.mongodb.client.MongoDatabase
+import io.github.cdimascio.dotenv.dotenv
 import org.bson.Document
 import org.litote.kmongo.*
 
@@ -15,7 +16,7 @@ class Player(val identifier: String, val elo: Int = 1500, val win: Int = 0, val 
             .append("win", 0)
             .append("lose", 0)
             .append("draw", 0)
-        MongoClients.create("mongodb+srv://Colm:238Kotlin@cluster0.n2kg9.mongodb.net/MBAC?retryWrites=true&w=majority")
+        MongoClients.create("mongodb+srv://Colm:${dotenv()["DB_PASS"]}@cluster0.n2kg9.mongodb.net/MBAC?retryWrites=true&w=majority")
             .getDatabase("MBAC")
             .getCollection("players")
             .insertOne(newPlayer)

@@ -4,12 +4,13 @@ import com.mongodb.client.MongoClients
 import com.mongodb.client.model.Filters.eq
 import com.mongodb.client.model.Updates.combine
 import com.mongodb.client.model.Updates.set
+import io.github.cdimascio.dotenv.dotenv
 import org.bson.Document
 import java.time.Instant
 
 object Db {
     val client =
-        MongoClients.create("mongodb+srv://Colm:238Kotlin@cluster0.n2kg9.mongodb.net/MBAC?retryWrites=true&w=majority")
+        MongoClients.create("mongodb+srv://Colm:${dotenv()["DB_PASS"]}@cluster0.n2kg9.mongodb.net/MBAC?retryWrites=true&w=majority")
     val database = client.getDatabase("MBAC")
     val players = database.getCollection("players")
 
