@@ -26,6 +26,7 @@ object Db {
                 .append("lose", 0)
                 .append("draw", 0)
         )
+        println("Added $identifier to the database")
         return players.find(Document("id", identifier)).first()!!
     }
 
