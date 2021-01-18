@@ -10,7 +10,10 @@ import net.dv8tion.jda.api.events.message.guild.GuildMessageReceivedEvent
 import net.dv8tion.jda.api.events.message.guild.react.GuildMessageReactionAddEvent
 import net.dv8tion.jda.api.events.message.react.MessageReactionAddEvent
 import xyz.colmmurphy.mbac.Db
+import xyz.colmmurphy.mbac.enums.Outcomes
 import java.awt.Color
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.locks.Lock
 import kotlin.math.ceil
 import kotlin.math.floor
 import kotlin.math.pow
@@ -63,13 +66,30 @@ class ChessGame(val host: User, val guest: User, val tc: TextChannel) {
         println("created EventWaiter")
         waiter.waitForEvent(GuildMessageReactionAddEvent::class.java,
             { e ->
-                (e.user.equals(host) || e.user.equals(guest)) && bothPlayersReacted(e)
+                (e.user.equals(host) || e.user.equals(guest))
+                        && e.messageId.equals(lmid)
+                        && voteWinner(e)
             },
             { e ->
-                e.channel.sendMessage("line 73, function returned true").queue()
-                waiter.shutdown()
+                e.channel.sendMessage(EmbedBuilder()
+                    .setTitle("Game is finished")
+                    .setColor(Color.blue)
+                    .addField(" ",
+                    if (votes[0] == Outcomes.hostWin) {
+                        "${host.name} has won"
+                    } else if (votes[0] == Outcomes.guestWin) {
+                        "${guest.name} has won"
+                    } else "Game ended in a draw",
+                    false)
+                    .build())
+                    .queue()
+                endOfGameCalcs()
             },
-
+            1200L, TimeUnit.SECONDS,
+            { ->
+                tc.sendMessage("${host.asMention}, your game has timed out, start a new game with " +
+                    "```;chess @<Person>``` if you want to record your result").queue()
+            }
         )
 
     }
@@ -77,6 +97,65 @@ class ChessGame(val host: User, val guest: User, val tc: TextChannel) {
     private var hostWinVotes = 0
     private var guestWinVotes = 0
     private var drawVotes = 0
+    private var votes: Array<Outcomes?> = arrayOf(null, null)
+
+    /**
+     * returns true if both players have voted for the same person as winner
+     */
+    private fun voteWinner(e: GuildMessageReactionAddEvent): Boolean {
+        val person = if (e.user.equals(host)) 0 else 1
+        when(e.reactionEmote.asCodepoints) {
+            "U+31U+fe0fU+20e3" -> { // :one:
+                votes[person] = Outcomes.hostWin
+            }
+            "U+32U+fe0fU+20e3" -> { // :two:
+                votes[person] = Outcomes.guestWin
+            }
+            "U+33U+fe0fU+20e3" -> { // :three
+                votes[person] = Outcomes.draw
+            }
+        }
+        return votes[0] == votes[1]
+    }
+
+    /**
+     * updates the db with new wlo scores, and messages the channel notifying the users
+     */
+    private fun endOfGameCalcs() {
+        val s: Double = if (votes[0] == Outcomes.hostWin) {
+            1.0
+        } else if (votes[0] == Outcomes.guestWin) {
+            0.0
+        } else 0.5
+        val hostEloChange = ceil(k * (s - E_h)).toInt()
+        val guestEloChange = ceil(k * ((1 - s) - E_g)).toInt()
+
+        if (s == 0.5) {
+            Db.updatePlayer(host.id, eloChange=hostEloChange, drawChange=1)
+            Db.updatePlayer(guest.id, eloChange=guestEloChange, drawChange=1)
+        } else {
+            Db.updatePlayer(host.id,
+                eloChange=hostEloChange,
+                winChange=s.toInt(),
+                loseChange=(1 - s).toInt(),
+            )
+            Db.updatePlayer(guest.id,
+                eloChange=guestEloChange,
+                winChange=(1 - s).toInt(),
+                loseChange=s.toInt()
+            )
+        }
+        tc.sendMessage(EmbedBuilder()
+            .setTitle("End of game")
+            .setColor(Color.blue)
+            .addField("Changes to elo",
+                "${host.name}: $hostEloChange\n" +
+                "${guest.name}: $guestEloChange",
+                false)
+            .setFooter("Report any issues to Murf#6404")
+            .build())
+            .queue()
+    }
 
     private fun bothPlayersReacted(e: GuildMessageReactionAddEvent): Boolean {
         println("called bothPlayersReacted()")

@@ -23,8 +23,24 @@ class GuildMessageListener: ListenerAdapter() {
         val cmd = event.message.contentRaw.toLowerCase().substringAfter(PREFIX).split(" ")
         println(cmd.joinToString(", "))
         when (cmd[0]) {
+            "help" -> {
+                event.channel.sendMessage(EmbedBuilder()
+                    .setTitle("Commands List")
+                    .setColor(Color.blue)
+                    .addField("commands",
+                    "**${PREFIX}help** - displays this menu\n" +
+                    "**${PREFIX}chess @<person>** - starts a game with the mentiones user\n" +
+                    "**${PREFIX}stats** - shows your statistics\n" +
+                    "**${PREFIX}leaderboard** - shows the highest rated users in the server",
+                    false)
+                    .setFooter("report any issues to Murf#6404")
+                    .build())
+                    .queue()
+            }
             "testgame" -> {
+                if (event.message.author.id != "417097416085602315") return
                 val match = ChessGame(event.message.author, event.author, event.channel)
+                event.channel.sendMessage("Starting test game").queue()
                 match.onGameStart()
             }
             "chess" -> {
