@@ -1,3 +1,5 @@
+import groovy.lang.Closure
+
 plugins {
     id 'java'
     id 'org.jetbrains.kotlin.jvm' version '1.4.20'
@@ -27,13 +29,31 @@ dependencies {
     compile 'org.mongodb:mongodb-driver-sync:4.0.5'
     compile 'io.github.cdimascio:dotenv-kotlin:6.2.2'
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.4.2")
-    compile 'net.dv8tion:JDA:4.2.0_227'
+    compile ('net.dv8tion:JDA:4.2.0_227') {
+        exclude module: 'opus-java'
+    }
     compile 'com.jagrosh:jda-utilities:3.0.5'
 }
 
-//tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {
-//    KotlinOptions {jvmTarget="1.8"}
-//}
+jar {
+    manifest {
+        attributes 'Main-Class':'xyz.colmmurphy.mbzc.MBACKt'
+    }
+
+    from {
+        configurations.compile.collect {
+            it.isDirectory() ? it :
+                    zipTree(it)
+        }
+    }
+}
+
+sourceSets {
+    main.java.srcDirs +=
+            'src/main/kotlin/'
+    test.java.srcDirs +=
+            'src/test/kotlin/'
+}
 
 test {
     useJUnitPlatform()

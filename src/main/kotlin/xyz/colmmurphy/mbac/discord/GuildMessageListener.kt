@@ -9,22 +9,29 @@ import com.jagrosh.jdautilities.commons.waiter.EventWaiter
 import net.dv8tion.jda.api.entities.MessageReaction
 import net.dv8tion.jda.api.events.message.guild.react.GuildMessageReactionAddEvent
 import net.dv8tion.jda.api.events.message.react.MessageReactionAddEvent
+import org.bson.Document
+import org.bson.conversions.Bson
 import xyz.colmmurphy.mbac.Db
 import xyz.colmmurphy.mbac.Player
 import xyz.colmmurphy.mbac.enums.values
 import java.awt.Color
+import com.mongodb.BasicDBObject
+import com.mongodb.client.MongoCursor
+import xyz.colmmurphy.mbac.enums.Strings
+
 
 class GuildMessageListener: ListenerAdapter() {
     var PREFIX = ";"
-    override fun onGuildMessageReceived(event: GuildMessageReceivedEvent) {
-        if (!event.message.contentRaw.startsWith(PREFIX)) return
-        if (event.channel.id != values.LOG_CHANNEL.id && event.channel.id != values.CHESS_CHANNEL.id) return
-        if (event.author.isBot || event.isWebhookMessage) return
-        val cmd = event.message.contentRaw.toLowerCase().substringAfter(PREFIX).split(" ")
+    override fun onGuildMessageReceived(e: GuildMessageReceivedEvent) {
+        if (!e.message.contentRaw.startsWith(PREFIX)) return
+        if (e.channel.id != values.LOG_CHANNEL.id && e.channel.id != values.CHESS_CHANNEL.id) return
+        if (e.author.isBot || e.isWebhookMessage) return
+        val cmd = e.message.contentRaw.toLowerCase().substringAfter(PREFIX).split(" ")
         println(cmd.joinToString(", "))
         when (cmd[0]) {
+
             "help" -> {
-                event.channel.sendMessage(EmbedBuilder()
+                e.channel.sendMessage(EmbedBuilder()
                     .setTitle("Commands List")
                     .setColor(Color.blue)
                     .addField("commands",
@@ -37,27 +44,29 @@ class GuildMessageListener: ListenerAdapter() {
                     .build())
                     .queue()
             }
+
             "testgame" -> {
-                if (event.message.author.id != "417097416085602315") return
-                val match = ChessGame(event.message.author, event.author, event.channel)
-                event.channel.sendMessage("Starting test game").queue()
+                if (e.message.author.id != "417097416085602315") return
+                val match = ChessGame(e.message.author, e.author, e.channel)
+                e.channel.sendMessage("Starting test game").queue()
                 match.onGameStart()
             }
+
             "chess" -> {
-                val players = event.message.mentionedUsers
+                val players = e.message.mentionedUsers
                 if (players.isNullOrEmpty()) {
-                    event.channel.sendMessage("Chess with who?")
+                    e.channel.sendMessage("Chess with who?")
                         .queue()
                     return
-                } else if (players.contains(event.message.author)) {
-                    event.channel.sendMessage("You can't play against yourself")
+                } else if (players.contains(e.message.author)) {
+                    e.channel.sendMessage("You can't play against yourself")
                         .queue()
                     return
                 }
-                event.channel.sendMessage(EmbedBuilder()
-                    .setTitle("${event.author.asTag}'s game")
+                e.channel.sendMessage(EmbedBuilder()
+                    .setTitle("${e.author.asTag}'s game")
                     .setColor(Color.blue)
-                    .addField("", "${players[0].asMention}, do you accept ${event.message.author.asMention}'s challenge?", true)
+                    .addField("", "${players[0].asMention}, do you accept ${e.message.author.asMention}'s challenge?", true)
                     .build())
                     .queue { message ->
                         message.addReaction("U+2705").queue() //tick
@@ -65,23 +74,24 @@ class GuildMessageListener: ListenerAdapter() {
                     }
                 val waiter = Bot.waiter
                 waiter.waitForEvent(MessageReactionAddEvent::class.java, {
-                    e -> e.member!!.user.equals(players[0]) && e.reaction.reactionEmote.asCodepoints.equals("U+2705")
+                    rae -> e.member!!.user.equals(players[0]) && rae.reaction.reactionEmote.asCodepoints.equals("U+2705")
                 }, {
-                    e -> e.channel.sendMessage("Starting game").queue()
-                    val cg = ChessGame(event.message.author, players[0], event.channel)
+                    rae -> rae.channel.sendMessage("Starting game").queue()
+                    val cg = ChessGame(e.message.author, players[0], e.channel)
                     cg.onGameStart()
                 })
             }
+
             "stats" -> {
-                event.channel.sendTyping().queue()
-                val p: Player = Db.getPlayerFromId(if (event.message.mentionedUsers.isNullOrEmpty()) {
-                    event.message.author.id
-                } else event.message.mentionedUsers[0].id)
+                e.channel.sendTyping().queue()
+                val p: Player = Db.getPlayerFromId(if (e.message.mentionedUsers.isNullOrEmpty()) {
+                    e.message.author.id
+                } else e.message.mentionedUsers[0].id)
                 val embedBuilder = EmbedBuilder()
                     .setColor(Color.blue)
-                    .setTitle("${if (event.message.mentionedUsers.isNullOrEmpty()) {
-                        event.message.author.asTag
-                    } else {event.message.mentionedUsers[0].asTag}}'s stats:")
+                    .setTitle("${if (e.message.mentionedUsers.isNullOrEmpty()) {
+                        e.message.author.asTag
+                    } else {e.message.mentionedUsers[0].asTag}}'s stats:")
                     .addField(" ",
                         "**Elo:** ${p.elo}\n" +
                                 "**Games played:** ${p.win + p.lose + p.draw}\n" +
@@ -98,7 +108,44 @@ class GuildMessageListener: ListenerAdapter() {
                                 "**Active since:** ${java.time.format.DateTimeFormatter.ISO_INSTANT
                                     .format(java.time.Instant.ofEpochSecond(p.activeSince.toLong()/1000))}",
                         false)
-                event.channel.sendMessage(embedBuilder.build())
+                e.channel.sendMessage(embedBuilder.build())
+                    .queue()
+            }
+
+            "leaderboard" -> {
+                e.channel.sendTyping().queue()
+                val top10 = Db.players.find().sort(BasicDBObject("elo", -1)).limit(5)
+                e.guild.loadMembers()
+                println(e.guild.memberCache.joinToString(", "))
+                val messageList = e.guild.members
+                println(messageList.joinToString(", "))
+                val iterator: MongoCursor<Document> = top10.iterator()
+                var messageBody = ""
+                while(iterator.hasNext()) {
+                    val iteratorNext = iterator.next().toJson()
+                    messageBody += "${
+                        try {
+                            e.guild.getMemberById(
+                                iteratorNext
+                                    .substringAfterLast("id\": \"")
+                                    .substringBefore("\"")
+                            )!!.user.asTag
+                        } catch (e: NullPointerException) {
+                            "NullPointerException"
+                        }
+                    } - ${
+                        iteratorNext
+                            .substringAfter("elo\": ")
+                            .substringBefore(",")}\n"
+                }
+                e.channel.sendMessage(EmbedBuilder()
+                    .setTitle("Leaderboard")
+                    .setColor(Color.blue)
+                    .addField(" ",
+                    messageBody,
+                    false)
+                    .setFooter(Strings.genericEmbedFooter.content)
+                    .build())
                     .queue()
             }
         }
