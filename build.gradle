@@ -37,7 +37,7 @@ dependencies {
 
 jar {
     manifest {
-        attributes 'Main-Class':'xyz.colmmurphy.mbzc.MBACKt'
+        attributes 'Main-Class':'xyz.colmmurphy.mbac.MBACKt'
     }
 
     from {
