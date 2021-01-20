@@ -73,6 +73,9 @@ class ChessGame(val host: User, val guest: User, val tc: TextChannel) {
             { e ->
                 e.channel.sendMessage(EmbedBuilder()
                     .setTitle("Game is finished")
+                    .setThumbnail(if (votes[0] == Outcomes.hostWin) {
+                        host.avatarUrl
+                    } else guest.avatarUrl)
                     .setColor(Color.blue)
                     .addField(" ",
                     if (votes[0] == Outcomes.hostWin) {
@@ -85,7 +88,7 @@ class ChessGame(val host: User, val guest: User, val tc: TextChannel) {
                     .queue()
                 endOfGameCalcs()
             },
-            1200L, TimeUnit.SECONDS,
+            1800L, TimeUnit.SECONDS,
             { ->
                 tc.sendMessage("${host.asMention}, your game has timed out, start a new game with " +
                     "```;chess @<Person>``` if you want to record your result").queue()

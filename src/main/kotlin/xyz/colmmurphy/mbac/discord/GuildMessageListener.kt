@@ -13,6 +13,7 @@ import xyz.colmmurphy.mbac.Db
 import xyz.colmmurphy.mbac.Player
 import xyz.colmmurphy.mbac.enums.values
 import java.awt.Color
+import java.util.concurrent.TimeUnit
 
 class GuildMessageListener: ListenerAdapter() {
     var PREFIX = ";"
@@ -70,7 +71,12 @@ class GuildMessageListener: ListenerAdapter() {
                     e -> e.channel.sendMessage("Starting game").queue()
                     val cg = ChessGame(event.message.author, players[0], event.channel)
                     cg.onGameStart()
-                })
+                },
+                120L, TimeUnit.SECONDS,
+                { ->
+                    println("game declined")
+                }
+                )
             }
             "stats" -> {
                 event.channel.sendTyping().queue()
