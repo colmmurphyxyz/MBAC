@@ -74,7 +74,7 @@ class GuildMessageListener: ListenerAdapter() {
                     }
                 val waiter = Bot.waiter
                 waiter.waitForEvent(MessageReactionAddEvent::class.java, {
-                    rae -> e.member!!.user.equals(players[0]) && rae.reaction.reactionEmote.asCodepoints.equals("U+2705")
+                    rae -> rae.member!!.user.equals(players[0]) && rae.reaction.reactionEmote.asCodepoints.equals("U+2705")
                 }, {
                     rae -> rae.channel.sendMessage("Starting game").queue()
                     val cg = ChessGame(e.message.author, players[0], e.channel)
@@ -82,7 +82,8 @@ class GuildMessageListener: ListenerAdapter() {
                 },
                 120L, TimeUnit.SECONDS,
                 { ->
-                    println("game declined")
+                    e.channel.sendMessage("```Game offer timed out```").queue()
+                    println("${e.message.author.name}'s game declined")
                 }
                 )
             }
