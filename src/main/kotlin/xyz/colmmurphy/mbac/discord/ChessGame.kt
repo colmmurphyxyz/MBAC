@@ -17,6 +17,7 @@ import java.util.concurrent.locks.Lock
 import kotlin.math.ceil
 import kotlin.math.floor
 import kotlin.math.pow
+import kotlin.math.round
 
 class ChessGame(val host: User, val guest: User, val tc: TextChannel) {
     /**
@@ -130,12 +131,12 @@ class ChessGame(val host: User, val guest: User, val tc: TextChannel) {
         } else if (votes[0] == Outcomes.guestWin) {
             0.0
         } else 0.5
-        val hostEloChange = ceil(k * (s - E_h)).toInt()
+        val hostEloChange = round(k * (s - E_h)).toInt()
         val guestEloChange = ceil(k * ((1 - s) - E_g)).toInt()
 
         if (s == 0.5) {
             Db.updatePlayer(host.id, eloChange=hostEloChange, drawChange=1)
-            Db.updatePlayer(guest.id, eloChange=guestEloChange, drawChange=1)
+            Db.updatePlayer(guest.id, eloChange=(hostEloChange * -1), drawChange=1)
         } else {
             Db.updatePlayer(host.id,
                 eloChange=hostEloChange,
@@ -143,7 +144,7 @@ class ChessGame(val host: User, val guest: User, val tc: TextChannel) {
                 loseChange=(1 - s).toInt(),
             )
             Db.updatePlayer(guest.id,
-                eloChange=guestEloChange,
+                eloChange=(hostEloChange * -1),
                 winChange=(1 - s).toInt(),
                 loseChange=s.toInt()
             )
@@ -153,7 +154,7 @@ class ChessGame(val host: User, val guest: User, val tc: TextChannel) {
             .setColor(Color.blue)
             .addField("Changes to elo",
                 "${host.name}: $hostEloChange\n" +
-                "${guest.name}: $guestEloChange",
+                "${guest.name}: ${hostEloChange * -1}",
                 false)
             .setFooter("Report any issues to Murf#6404")
             .build())

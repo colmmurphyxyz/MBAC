@@ -122,9 +122,10 @@ class GuildMessageListener: ListenerAdapter() {
                 e.channel.sendTyping().queue()
                 val top10 = Db.players.find().sort(BasicDBObject("elo", -1)).limit(5)
                 e.guild.loadMembers()
-                println(e.guild.memberCache.joinToString(", "))
+                //println(e.guild.memberCache.joinToString(", "))
                 val messageList = e.guild.members
-                println(messageList.joinToString(", "))
+                println(messageList[0])
+                println("retrieved members list")
                 val iterator: MongoCursor<Document> = top10.iterator()
                 var messageBody = ""
                 while(iterator.hasNext()) {
