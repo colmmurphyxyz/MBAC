@@ -11,6 +11,7 @@ import net.dv8tion.jda.api.events.message.guild.react.GuildMessageReactionAddEve
 import net.dv8tion.jda.api.events.message.react.MessageReactionAddEvent
 import xyz.colmmurphy.mbac.Db
 import xyz.colmmurphy.mbac.enums.Outcomes
+import xyz.colmmurphy.mbac.enums.Strings
 import java.awt.Color
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.locks.Lock
@@ -72,21 +73,22 @@ class ChessGame(val host: User, val guest: User, val tc: TextChannel) {
                         && voteWinner(e)
             },
             { e ->
-                e.channel.sendMessage(EmbedBuilder()
-                    .setTitle("Game is finished")
-                    .setThumbnail(if (votes[0] == Outcomes.hostWin) {
-                        host.avatarUrl
-                    } else guest.avatarUrl)
-                    .setColor(Color.blue)
-                    .addField(" ",
-                    if (votes[0] == Outcomes.hostWin) {
-                        "${host.name} has won"
-                    } else if (votes[0] == Outcomes.guestWin) {
-                        "${guest.name} has won"
-                    } else "Game ended in a draw",
-                    false)
-                    .build())
-                    .queue()
+                // there should be no need for this message now but i'm keeping the code just in case
+//                e.channel.sendMessage(EmbedBuilder()
+//                    .setTitle("Game is finished")
+//                    .setThumbnail(if (votes[0] == Outcomes.hostWin) {
+//                        host.avatarUrl
+//                    } else guest.avatarUrl)
+//                    .setColor(Color.blue)
+//                    .addField(" ",
+//                    if (votes[0] == Outcomes.hostWin) {
+//                        "${host.name} has won"
+//                    } else if (votes[0] == Outcomes.guestWin) {
+//                        "${guest.name} has won"
+//                    } else "Game ended in a draw",
+//                    false)
+//                    .build())
+//                    .queue()
                 endOfGameCalcs()
             },
             1800L, TimeUnit.SECONDS,
@@ -149,80 +151,24 @@ class ChessGame(val host: User, val guest: User, val tc: TextChannel) {
                 loseChange=s.toInt()
             )
         }
+
+        val winner: User? = if (votes[0] == Outcomes.hostWin) { host } else if (votes[0] == Outcomes.guestWin) { guest } else { null }
+
         tc.sendMessage(EmbedBuilder()
-            .setTitle("End of game")
-            .setColor(Color.blue)
+            .setTitle("Game has finished")
+                // sets the thumbnail to the winner's pfp, uses host's if draw
+            .setThumbnail(try {
+                winner!!.avatarUrl
+            } catch (e: NullPointerException) {
+                host.avatarUrl
+            })
+            .setColor(Color.green)
             .addField("Changes to elo",
                 "${host.name}: $hostEloChange\n" +
                 "${guest.name}: ${hostEloChange * -1}",
                 false)
-            .setFooter("Report any issues to Murf#6404")
+            .setFooter(Strings.genericEmbedFooter.content)
             .build())
             .queue()
-    }
-
-    private fun bothPlayersReacted(e: GuildMessageReactionAddEvent): Boolean {
-        println("called bothPlayersReacted()")
-        when(e.reactionEmote.asCodepoints) {
-            "U+31U+fe0fU+20e3" -> { //:one:
-                hostWinVotes++
-                println("increase host votes by 1")
-            }
-            "U+32U+fe0fU+20e3" -> { //:two:
-                guestWinVotes++
-                println("increase guest votes by 1")
-            }
-            "U+33U+fe0fU+20e3" -> { //:three
-                drawVotes++
-                println("increase draw votes by 1")
-            }
-        }
-        println("$hostWinVotes , $guestWinVotes , $drawVotes")
-        if (hostWinVotes == 2) {
-            e.channel.sendMessage("${host.name} won, updating database").queue()
-            onHostWin()
-            return true
-        } else if (guestWinVotes == 2) {
-            e.channel.sendMessage("${guest.name} won, updating database").queue()
-            onGuestWin()
-        } else if (drawVotes == 2) {
-            e.channel.sendMessage("Tie, updating database").queue()
-            onDraw()
-        } else return false
-        return false
-    }
-    fun declareWinner(u: User = host, isDraw: String = " ") {
-        this.waiter = Bot.waiter
-        if (isDraw.toLowerCase() == "draw") {
-            onDraw()
-        } else if (u.equals(host)) {
-            onHostWin()
-        } else if (u.equals(guest)) {
-            onGuestWin()
-        } else throw(NullPointerException())
-    }
-
-    fun onHostWin() {
-        val hostEloGain = floor(k * (1 - E_h)).toInt()
-        val guestEloLoss = ceil(-(k * E_g)).toInt()
-
-        Db.updatePlayer(host.id, eloChange=hostEloGain, winChange=1)
-        Db.updatePlayer(guest.id, eloChange=guestEloLoss, loseChange=1)
-    }
-
-    fun onGuestWin() {
-        val hostEloLoss = ceil(-(k * E_h)).toInt()
-        val guestEloGain = floor(k * (1 - E_h)).toInt()
-
-        Db.updatePlayer(host.id, eloChange=hostEloLoss, loseChange=1)
-        Db.updatePlayer(guest.id, eloChange = guestEloGain, winChange=1)
-    }
-
-    fun onDraw() {
-        val hostEloChange = floor(k * (0.5 - E_h)).toInt()
-        val guestEloChange = ceil(k * (0.5 - E_g)).toInt()
-
-        Db.updatePlayer(host.id, eloChange=hostEloChange, drawChange=1)
-        Db.updatePlayer(guest.id, eloChange=guestEloChange, drawChange=1)
     }
 }
