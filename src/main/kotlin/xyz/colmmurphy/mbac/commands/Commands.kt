@@ -1,10 +1,10 @@
-package xyz.colmmurphy.mbac.enums
+package xyz.colmmurphy.mbac.commands
 
 enum class Commands(val aliases: List<String>,
                     val description: String = "Tell Murf to set a description for this command",
                     val ownerOnly: Boolean) {
 
-    EVAL(listOf("eval", "evaluate", "run"),
+    EVAL(listOf("eval", "evaluate", "evalcode", "run"),
         "**[Bot owner only]** Runs raw Kotlin code",
         true),
 

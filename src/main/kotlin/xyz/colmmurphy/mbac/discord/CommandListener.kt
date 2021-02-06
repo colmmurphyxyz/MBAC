@@ -1,19 +1,25 @@
 package xyz.colmmurphy.mbac.discord
 
-import com.jagrosh.jdautilities.command.Command
 import com.mongodb.BasicDBObject
+import de.swirtz.ktsrunner.objectloader.KtsObjectLoader
 import net.dv8tion.jda.api.EmbedBuilder
-import net.dv8tion.jda.api.entities.MessageEmbed
 import net.dv8tion.jda.api.events.message.guild.GuildMessageReceivedEvent
+import net.dv8tion.jda.api.events.message.react.MessageReactionAddEvent
 import net.dv8tion.jda.api.hooks.ListenerAdapter
-import org.litote.kmongo.util.idValue
 import xyz.colmmurphy.mbac.Db
-import xyz.colmmurphy.mbac.enums.Commands
-import xyz.colmmurphy.mbac.enums.Commands.*
+import xyz.colmmurphy.mbac.commands.Commands
+import xyz.colmmurphy.mbac.commands.Commands.*
+import xyz.colmmurphy.mbac.commands.Eval
 import xyz.colmmurphy.mbac.enums.Strings
 import xyz.colmmurphy.mbac.enums.values
 import java.awt.Color
+import java.io.File
+import java.io.PrintStream
+import java.lang.IllegalArgumentException
 import java.lang.NullPointerException
+import java.nio.file.Files
+import java.nio.file.Paths
+import java.util.concurrent.TimeUnit
 
 class CommandListener : ListenerAdapter() {
     var PREFIX = ";"
@@ -33,7 +39,7 @@ class CommandListener : ListenerAdapter() {
         // finds the Command enum that the alias belongs to
         val command: Commands? = Commands.belongsTo(msg[0])
         if (command == null) {
-            e.channel.sendMessage("Couldn't find command ```${msg[0]}```").queue()
+            e.channel.sendMessage("Couldn't find command **${msg[0]}**").queue()
             return
         } else {
             if (command.ownerOnly && e.author.id != values.OWNER.id) {
@@ -41,6 +47,45 @@ class CommandListener : ListenerAdapter() {
                 return
             }
             when (command) {
+                EVAL -> {
+                    val input = e.message.contentRaw.substringAfter("```").substringBeforeLast("```")
+                    val eval = Eval(e, input)
+                    eval.writeToFile()
+                    var toBeRun = "```"
+                    val fileLines = File("src/main/kotlin/xyz/colmmurphy/mbac/commands/toEval.kts").bufferedReader().readLines()
+                    for (i in fileLines) {
+                        toBeRun += "$i \n"
+                    }
+                    e.channel.sendMessage(EmbedBuilder()
+                        .setTitle("Code to be evaluated")
+                        .addField(" ",
+                        "$toBeRun ```",
+                        false)
+                        .build()
+                    ).queue { message -> message.addReaction("U+2705").queue()} //adds a tick mark reaction
+                    val waiter = Bot.waiter
+                    waiter.waitForEvent(MessageReactionAddEvent::class.java, {
+                            rae -> (rae.member!!.user == e.author) && rae.reaction.reactionEmote.asCodepoints.equals("U+2705")
+                    }, {
+                        e.channel.sendMessage("Executing code...").queue()
+                        eval.runCode()
+                        val output = eval.readOutput()
+                        var outputMessage = "```\n"
+                        for (i in output) {
+                            outputMessage += "$ $i \n"
+                        }
+                        try {
+                            e.channel.sendMessage("$outputMessage```").queue()
+                        } catch (IAE: IllegalArgumentException) {
+                            e.channel.sendMessage("output is too long to send as message").queue()
+                        }
+                        e.channel.sendFile(File("toEval.output.txt")).queue()
+                    }, 60L, TimeUnit.SECONDS,
+                        { ->
+                            e.channel.sendMessage("timed out").queue()
+                        }
+                    )
+                }
                 HELP -> {
                     e.channel.sendMessage(
                         EmbedBuilder()

@@ -18,9 +18,13 @@ version '0.2.0'
 repositories {
     mavenCentral()
     jcenter()
+    maven {
+        setUrl("https://dl.bintray.com/s1m0nw1/KtsRunner")
+    }
 }
 
 dependencies {
+    "kotlin-script-runtime.jar"
     implementation "org.jetbrains.kotlin:kotlin-stdlib"
     testImplementation 'org.junit.jupiter:junit-jupiter-api:5.6.0'
     testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine'
@@ -33,6 +37,8 @@ dependencies {
         exclude module: 'opus-java'
     }
     compile 'com.jagrosh:jda-utilities:3.0.5'
+    implementation("de.swirtz:ktsRunner:0.0.9")
+    implementation "org.jetbrains.kotlin:kotlin-script-runtime:1.4.20"
 }
 
 jar {
