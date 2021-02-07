@@ -52,7 +52,7 @@ class CommandListener : ListenerAdapter() {
                     val eval = Eval(e, input)
                     eval.writeToFile()
                     var toBeRun = "```"
-                    val fileLines = File("src/main/kotlin/xyz/colmmurphy/mbac/commands/toEval.kts").bufferedReader().readLines()
+                    val fileLines = File("src/main/resources/toEvaluate.kts").bufferedReader().readLines()
                     for (i in fileLines) {
                         toBeRun += "$i \n"
                     }
@@ -79,7 +79,7 @@ class CommandListener : ListenerAdapter() {
                         } catch (IAE: IllegalArgumentException) {
                             e.channel.sendMessage("output is too long to send as message").queue()
                         }
-                        e.channel.sendFile(File("toEval.output.txt")).queue()
+                        e.channel.sendFile(File("src/main/resources/output.txt")).queue()
                     }, 60L, TimeUnit.SECONDS,
                         { ->
                             e.channel.sendMessage("timed out").queue()

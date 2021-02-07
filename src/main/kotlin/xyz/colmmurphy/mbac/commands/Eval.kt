@@ -7,11 +7,27 @@ import java.io.PrintStream
 import java.nio.file.Files
 import java.nio.file.Paths
 
-class Eval(private val e: GuildMessageReceivedEvent, private val input: String) {
+class Eval (private val e: GuildMessageReceivedEvent, private val input: String) {
 
     fun writeToFile() {
+        val ktsFile = File("src/main/resources/toEvaluate.kts")
+        ktsFile.printWriter().use { out ->
+            out.println("import java.io.PrintStream\n" +
+                    "import java.io.File\n" +
+                    "import xyz.colmmurphy.mbac.*\n" +
+                    "import org.bson.Document\n" +
+                    "import org.bson.conversions.Bson\n" +
+                    "import com.mongodb.client.MongoCursor\n" +
+                    "import com.mongodb.BasicDBObject\n\n")
+            out.println("val ps = PrintStream(\"src/main/resources/output.txt\")\n" +
+                    "ps.println(\"Start\")\n")
+            out.println(input)
+        }
+    }
+
+    fun writeToFile_old() {
         val old = System.out
-        val ps = PrintStream("src/main/kotlin/xyz/colmmurphy/mbac/commands/toEval.kts")
+        val ps = PrintStream("src/main/resources/toEvaluate.kts")
         System.setOut(ps)
 
         var toEvaluate = ""
@@ -39,7 +55,7 @@ class Eval(private val e: GuildMessageReceivedEvent, private val input: String) 
     }
 
     fun runCode() {
-        val scriptReader = Files.newBufferedReader(Paths.get("src/main/kotlin/xyz/colmmurphy/mbac/commands/toEval.kts"))
+        val scriptReader = Files.newBufferedReader(Paths.get("src/main/resources/toEvaluate.kts"))
         try {
             val loadedObj = KtsObjectLoader().load<String?>(scriptReader)
         } catch (ignored: IllegalArgumentException) {
@@ -48,5 +64,5 @@ class Eval(private val e: GuildMessageReceivedEvent, private val input: String) 
     }
 
     fun readOutput(): List<String>
-        = File("toEval.output.txt").bufferedReader().readLines()
+        = File("src/main/resources/output.txt").bufferedReader().readLines()
 }
