@@ -9,8 +9,3 @@ import com.mongodb.BasicDBObject
 
 val ps = PrintStream("src/main/resources/output.txt")
 ps.println("Start")
-
-
-import io.github.cdimascio.dotenv.dotenv
-ps.println(dotenv()["API_KEY"])
-

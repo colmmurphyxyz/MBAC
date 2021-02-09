@@ -5,14 +5,14 @@ enum class Commands(val aliases: List<String>,
                     val ownerOnly: Boolean) {
 
     EVAL(listOf("eval", "evaluate", "evalcode", "run"),
-        "**[Bot owner only]** Runs raw Kotlin code",
+        "**[Bot owner only]** Runs Kotlin code",
         true),
 
     HELP(listOf("help", "h", "commands"),
         "Displays this menu",
         false),
 
-    STATS(listOf("statsalias", "statistics", "foobar",),
+    STATS(listOf("stats", "statsalias", "statistics", "foobar",),
         "Shows your or another person's stats",
         false),
 

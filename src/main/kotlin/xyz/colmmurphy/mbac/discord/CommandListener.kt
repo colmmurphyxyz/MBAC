@@ -3,6 +3,7 @@ package xyz.colmmurphy.mbac.discord
 import com.mongodb.BasicDBObject
 import de.swirtz.ktsrunner.objectloader.KtsObjectLoader
 import net.dv8tion.jda.api.EmbedBuilder
+import net.dv8tion.jda.api.entities.User
 import net.dv8tion.jda.api.events.message.guild.GuildMessageReceivedEvent
 import net.dv8tion.jda.api.events.message.react.MessageReactionAddEvent
 import net.dv8tion.jda.api.hooks.ListenerAdapter
@@ -10,6 +11,7 @@ import xyz.colmmurphy.mbac.Db
 import xyz.colmmurphy.mbac.commands.Commands
 import xyz.colmmurphy.mbac.commands.Commands.*
 import xyz.colmmurphy.mbac.commands.Eval
+import xyz.colmmurphy.mbac.commands.StatsBox
 import xyz.colmmurphy.mbac.enums.Strings
 import xyz.colmmurphy.mbac.enums.values
 import java.awt.Color
@@ -139,7 +141,16 @@ class CommandListener : ListenerAdapter() {
                     ).queue()
                 }
 
-                STATS -> TODO()
+                STATS -> {
+                    e.channel.sendTyping().queue()
+                    val u: User = if (e.message.mentionedUsers.isNullOrEmpty()) {
+                        e.message.author
+                    } else {
+                        e.message.mentionedUsers[0]
+                    }
+                    val statsBox = StatsBox(e, u)
+                    e.channel.sendMessage(statsBox.getStats()).queue()
+                }
 
                 else -> TODO()
             }
