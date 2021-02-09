@@ -1,22 +1,18 @@
-package xyz.colmmurphy.mbac.discord
+package xyz.colmmurphy.mbac.commands
 
 import com.jagrosh.jdautilities.commons.waiter.EventWaiter
 import net.dv8tion.jda.api.EmbedBuilder
 import net.dv8tion.jda.api.entities.Message
-import net.dv8tion.jda.api.entities.MessageReaction
 import net.dv8tion.jda.api.entities.TextChannel
 import net.dv8tion.jda.api.entities.User
-import net.dv8tion.jda.api.events.message.guild.GuildMessageReceivedEvent
 import net.dv8tion.jda.api.events.message.guild.react.GuildMessageReactionAddEvent
-import net.dv8tion.jda.api.events.message.react.MessageReactionAddEvent
 import xyz.colmmurphy.mbac.Db
+import xyz.colmmurphy.mbac.discord.Bot
 import xyz.colmmurphy.mbac.enums.Outcomes
 import xyz.colmmurphy.mbac.enums.Strings
 import java.awt.Color
 import java.util.concurrent.TimeUnit
-import java.util.concurrent.locks.Lock
 import kotlin.math.ceil
-import kotlin.math.floor
 import kotlin.math.pow
 import kotlin.math.round
 
@@ -36,8 +32,8 @@ class ChessGame(val host: User, val guest: User, val tc: TextChannel) {
     private val hostPlayer = Db.getPlayerFromId(host.id)
     private val guestPlayer = Db.getPlayerFromId(guest.id)
 
+    // the expected outcome of the host, i.e the probability that the host will win
     private val E_h = 1 / (1 + 10.0.pow((guestPlayer.elo - hostPlayer.elo).div(propFactor.toDouble())))
-    //the expected outcome of the host, i.e the probability that the host will win
     private val E_g = 1 / (1 + 10.0.pow((hostPlayer.elo - guestPlayer.elo).div(propFactor.toDouble())))
 
     fun onGameStart() {

@@ -4,6 +4,10 @@ enum class Commands(val aliases: List<String>,
                     val description: String = "Tell Murf to set a description for this command",
                     val ownerOnly: Boolean) {
 
+    CHESS(listOf("chess", "chessgame", "game", "cg", "c"),
+        "Starts a chess game with the user mentioned",
+        false),
+
     EVAL(listOf("eval", "evaluate", "evalcode", "run"),
         "**[Bot owner only]** Runs Kotlin code",
         true),

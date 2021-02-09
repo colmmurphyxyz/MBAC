@@ -8,6 +8,7 @@ import net.dv8tion.jda.api.events.message.guild.GuildMessageReceivedEvent
 import net.dv8tion.jda.api.events.message.react.MessageReactionAddEvent
 import net.dv8tion.jda.api.hooks.ListenerAdapter
 import xyz.colmmurphy.mbac.Db
+import xyz.colmmurphy.mbac.commands.ChessGame
 import xyz.colmmurphy.mbac.commands.Commands
 import xyz.colmmurphy.mbac.commands.Commands.*
 import xyz.colmmurphy.mbac.commands.Eval
@@ -49,6 +50,55 @@ class CommandListener : ListenerAdapter() {
                 return
             }
             when (command) {
+
+                CHESS -> {
+
+                    // filter out messages that don't mention anybody
+                    val players = e.message.mentionedUsers
+                    if (players.isNullOrEmpty()) {
+                        e.channel.sendMessage("Chess with who?")
+                            .queue()
+                        return
+                    } else if (players.contains(e.message.author)) {
+                        e.channel.sendMessage("You can't play against yourself")
+                            .queue()
+                        return
+                    }
+
+                    // send a message to get confirmation from the mentioned user
+                    e.channel.sendMessage(EmbedBuilder()
+                        .setThumbnail(e.author.avatarUrl)
+                        .setTitle("${e.author.asTag}'s game")
+                        .setColor(Color.blue)
+                        .addField("", "${players[0].asMention}, do you accept ${e.message.author.asMention}'s challenge?", true)
+                        .build())
+                        .queue { message ->
+                            message.addReaction("U+2705").queue() //tick
+                            message.addReaction("U+274C").queue() //cross
+                        }
+
+                    // create an EventWaiter to wait for a reaction from guest
+                    val waiter = Bot.waiter
+                    waiter.waitForEvent(MessageReactionAddEvent::class.java,
+                        // the condition to check for
+                        {
+                            rae -> rae.member!!.user.equals(players[0]) &&
+                                (rae.reaction.reactionEmote.asCodepoints.equals("U+2705") || rae.reaction.reactionEmote.asCodepoints.equals("U+274C"))
+                        },
+                        // what to do if condition returns true
+                        {
+                            rae -> if (rae.reaction.reactionEmote.asCodepoints.equals("U+274C")) return@waitForEvent
+                            rae.channel.sendMessage("Starting game!").queue()
+                            val cg = ChessGame(e.message.author, players[0], e.channel)
+                            cg.onGameStart()
+                        }, 120L, TimeUnit.SECONDS,
+                        // what to do after when the EventWaiter times out
+                        {
+                            -> e.channel.sendMessage("Game offer timed out").queue()
+                        }
+                    )
+                }
+
                 EVAL -> {
                     val input = e.message.contentRaw.substringAfter("```").substringBeforeLast("```")
                     val eval = Eval(e, input)
@@ -88,6 +138,7 @@ class CommandListener : ListenerAdapter() {
                         }
                     )
                 }
+
                 HELP -> {
                     e.channel.sendMessage(
                         EmbedBuilder()

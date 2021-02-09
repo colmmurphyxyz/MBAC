@@ -18,6 +18,7 @@ import java.awt.Color
 import java.util.concurrent.TimeUnit
 import com.mongodb.BasicDBObject
 import com.mongodb.client.MongoCursor
+import xyz.colmmurphy.mbac.commands.ChessGame
 import xyz.colmmurphy.mbac.enums.Strings
 
 class GuildMessageListener: ListenerAdapter() {
