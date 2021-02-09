@@ -71,6 +71,7 @@ class CommandListener : ListenerAdapter() {
                         .setTitle("${e.author.asTag}'s game")
                         .setColor(Color.blue)
                         .addField("", "${players[0].asMention}, do you accept ${e.message.author.asMention}'s challenge?", true)
+                        .setFooter(Strings.genericEmbedFooter.content)
                         .build())
                         .queue { message ->
                             message.addReaction("U+2705").queue() //tick
