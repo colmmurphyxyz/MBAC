@@ -26,6 +26,8 @@ class StatsBox (private val e: GuildMessageReceivedEvent, private val u: User) {
                     p.win.toFloat().div(p.lose).toString().substring(0, 4)
                 } catch (err: StringIndexOutOfBoundsException) {
                     p.win.toFloat().div(p.lose).toString()
+                } catch (err: ArithmeticException) {
+                    "N/A"
                 }
                 }\n" +
                 "**Active Since:** ${java.time.format.DateTimeFormatter.ISO_INSTANT
