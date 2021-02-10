@@ -18,9 +18,11 @@ import java.awt.Color
 import java.util.concurrent.TimeUnit
 import com.mongodb.BasicDBObject
 import com.mongodb.client.MongoCursor
+import xyz.colmmurphy.mbac.commands.ChessGame
 import xyz.colmmurphy.mbac.enums.Strings
 
 class GuildMessageListener: ListenerAdapter() {
+    /*
     var PREFIX = ";"
     override fun onGuildMessageReceived(e: GuildMessageReceivedEvent) {
         if (!e.message.contentRaw.startsWith(PREFIX)) return
@@ -105,7 +107,7 @@ class GuildMessageListener: ListenerAdapter() {
                                 "**Games lost:** ${p.lose}\n" +
                                 "**Games drawn:** ${p.draw}\n" +
                                 "**Win/loss ratio:** ${try {
-                                    (p.win / p.lose).toString().substring(0, 3)
+                                    (p.win.toDouble().div(p.lose)).toString().substring(0, 3)
                                 } catch (e: StringIndexOutOfBoundsException) {
                                     (p.win / p.lose).toString()
                                 } catch (e: ArithmeticException) {
@@ -157,4 +159,6 @@ class GuildMessageListener: ListenerAdapter() {
             }
         }
     }
+
+     */
 }
