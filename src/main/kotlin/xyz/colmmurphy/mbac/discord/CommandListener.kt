@@ -13,6 +13,7 @@ import xyz.colmmurphy.mbac.commands.Commands
 import xyz.colmmurphy.mbac.commands.Commands.*
 import xyz.colmmurphy.mbac.commands.Eval
 import xyz.colmmurphy.mbac.commands.StatsBox
+import xyz.colmmurphy.mbac.enums.Outcomes
 import xyz.colmmurphy.mbac.enums.Strings
 import xyz.colmmurphy.mbac.enums.values
 import java.awt.Color
@@ -193,6 +194,25 @@ class CommandListener : ListenerAdapter() {
                     ).queue()
                 }
 
+                RUNGAME -> {
+                    val players = e.message.mentionedUsers
+                    if (players.size != 2) {
+                        e.channel.sendMessage("How do you play a chess game with ${players.size} people?")
+                            .queue()
+                        return
+                    } else if (players[0] == players[1]) {
+                        e.channel.sendMessage("You can't play against yourself")
+                            .queue()
+                        return
+                    }
+
+                    e.channel.sendMessage("Starting game between ${players[0].name} and ${players[1].name}").queue()
+                    val cg = ChessGame(players[0], players[1], e.channel)
+                    cg.votes[0] = Outcomes.hostWin
+                    cg.votes[1] = Outcomes.hostWin
+                    cg.endOfGameCalcs()
+                }
+
                 STATS -> {
                     e.channel.sendTyping().queue()
                     val u: User = if (e.message.mentionedUsers.isNullOrEmpty()) {
@@ -204,7 +224,9 @@ class CommandListener : ListenerAdapter() {
                     e.channel.sendMessage(statsBox.getStats()).queue()
                 }
 
-                else -> TODO()
+                else -> {
+                    e.channel.sendMessage("Something went wrong :(").queue()
+                }
             }
         }
     }

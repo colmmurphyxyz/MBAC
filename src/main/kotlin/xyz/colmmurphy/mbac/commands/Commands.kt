@@ -16,6 +16,10 @@ enum class Commands(val aliases: List<String>,
         "Displays this menu",
         false),
 
+    RUNGAME(listOf("rungame", "testgame", "runtestgame"),
+        "**[Bot owner only]** Simulates a game between two players",
+        true),
+
     STATS(listOf("stats", "statsalias", "statistics", "foobar",),
         "Shows your or another person's stats",
         false),

@@ -23,11 +23,9 @@ class ChessGame(val host: User, val guest: User, val tc: TextChannel) {
      * calculate elo gain/loss for both players
      * make changes to the DB accordingly
      */
-    private val k = 32 //the K-factor for calculating Elo, typically set to 32 for most players, and 26 for high-ranked players
-    private val propFactor = 400 //This means that if a players Elo is 400 higher than their opponent's, they will be 10 times
-                        //more likely to win
-
-    private lateinit var waiter: EventWaiter;
+    private var k = 38              //the K-factor for calculating Elo, typically set to 32 for most players, and 26 for high-ranked players
+    private val propFactor = 400    //This means that if a players Elo is 400 higher than their opponent's, they will be 10 times
+                                    //more likely to win
 
     private val hostPlayer = Db.getPlayerFromId(host.id)
     private val guestPlayer = Db.getPlayerFromId(guest.id)
@@ -43,25 +41,26 @@ class ChessGame(val host: User, val guest: User, val tc: TextChannel) {
         tc.sendMessage(
             EmbedBuilder()
                 .setTitle("${host.name} vs. ${guest.name}")
-                .setColor(Color.blue)
+                .setColor(Color.red)
                 .addField(" ", "__Both players__ must react to this message with the winner\n" +
                         ":one: - ${host.name}\n" +
                         ":two: - ${guest.name}\n" +
                         ":three: - draw",
                     true)
+                .setFooter(Strings.genericEmbedFooter.content)
             .build())
             .queue { message ->
                 message.addReaction("U+31U+fe0fU+20e3").queue() //:one:
                 message.addReaction("U+32U+fe0fU+20e3").queue() //:two:
                 message.addReaction("U+33U+fe0fU+20e3").queue() //:three:
                 lmid = message.id
-                msg = message
-                println(lmid)
-                println(msg.author)
+//                msg = message
+//                println(lmid)
+//                println(msg.author)
             }
         Thread.sleep(2000)
         val waiter = Bot.waiter
-        println("created EventWaiter")
+        println("created EventWaiter for ${this.host.name} and ${this.guest.name}'s game")
         waiter.waitForEvent(GuildMessageReactionAddEvent::class.java,
             { e ->
                 (e.user.equals(host) || e.user.equals(guest))
@@ -96,14 +95,10 @@ class ChessGame(val host: User, val guest: User, val tc: TextChannel) {
 
     }
 
-    private var hostWinVotes = 0
-    private var guestWinVotes = 0
-    private var drawVotes = 0
-    private var votes: Array<Outcomes?> = arrayOf(null, null)
-
     /**
      * returns true if both players have voted for the same person as winner
      */
+    var votes: Array<Outcomes?> = arrayOf(null, null)
     private fun voteWinner(e: GuildMessageReactionAddEvent): Boolean {
         val person = if (e.user.equals(host)) 0 else 1
         when(e.reactionEmote.asCodepoints) {
@@ -123,7 +118,7 @@ class ChessGame(val host: User, val guest: User, val tc: TextChannel) {
     /**
      * updates the db with new wlo scores, and messages the channel notifying the users
      */
-    private fun endOfGameCalcs() {
+    fun endOfGameCalcs() {
         val s: Double = if (votes[0] == Outcomes.hostWin) {
             1.0
         } else if (votes[0] == Outcomes.guestWin) {
